@@ -46,6 +46,10 @@ interface Props {
   onLinkClick: (id: number) => void;
 
   linkAnchorId: number | null;
+
+  onDragSessionChange?: (
+    active: boolean
+  ) => void;
 }
 
 const styles = {
@@ -137,6 +141,7 @@ export default function DraggableInsightCard({
   onPointerDragEnd,
   onLinkClick,
   linkAnchorId,
+  onDragSessionChange,
 }: Props) {
   const [isDragging, setIsDragging] =
     useState(false);
@@ -179,9 +184,14 @@ export default function DraggableInsightCard({
         x: baseX,
         y: baseY,
       }}
-      onDragStart={() =>
-        setIsDragging(true)
-      }
+      style={{
+        touchAction: "none",
+      }}
+      onDragStart={() => {
+        onDragSessionChange?.(true);
+
+        setIsDragging(true);
+      }}
       onDrag={(event) => {
         const e = event as PointerEvent;
 
@@ -191,27 +201,34 @@ export default function DraggableInsightCard({
         );
       }}
       onDragEnd={(event, info) => {
-        setIsDragging(false);
+        try {
+          setIsDragging(false);
 
-        onPointerDragEnd();
+          onPointerDragEnd();
 
-        const nx = baseX + info.offset.x;
+          const nx = baseX + info.offset.x;
 
-        const ny = baseY + info.offset.y;
+          const ny = baseY + info.offset.y;
 
-        const e = event as PointerEvent;
+          const e = event as PointerEvent;
 
-        onDragComplete(
-          card.id,
-          nx,
-          ny,
-          e.clientX,
-          e.clientY
-        );
+          onDragComplete(
+            card.id,
+            nx,
+            ny,
+            e.clientX,
+            e.clientY
+          );
+        } finally {
+          onDragSessionChange?.(false);
+        }
       }}
       className={[
-        "group/card absolute w-[340px] cursor-grab rounded-2xl border",
-        "bg-[#0b1424]/95 p-4 text-white shadow-xl backdrop-blur-xl",
+        "group/card absolute w-[340px] cursor-grab select-none rounded-2xl border",
+        "bg-[#0b1424]/95 p-4 text-white shadow-xl",
+        isDragging
+          ? "backdrop-blur-none"
+          : "backdrop-blur-xl",
         "active:cursor-grabbing",
         config.glow,
         "transition-[border-color,box-shadow] duration-200",
@@ -225,9 +242,6 @@ export default function DraggableInsightCard({
           ? "ring-1 ring-white/15"
           : "",
       ].join(" ")}
-      whileHover={{
-        scale: isDragging ? 1.03 : 1.01,
-      }}
     >
       <div className="mb-3 flex items-start justify-between gap-2">
         <div

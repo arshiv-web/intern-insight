@@ -69,6 +69,9 @@ export default function WorkspacePage() {
   const trashRef =
     useRef<HTMLDivElement>(null);
 
+  const workspaceViewportRef =
+    useRef<HTMLDivElement>(null);
+
   const [meeting, setMeeting] =
     useState<Meeting | null>(null);
 
@@ -128,6 +131,23 @@ export default function WorkspacePage() {
       height: maxY,
     };
   }, [cards]);
+
+  function setWorkspaceDragSession(
+    active: boolean
+  ) {
+    const el =
+      workspaceViewportRef.current;
+
+    if (!el) return;
+
+    if (active) {
+      el.style.overflow = "hidden";
+    } else {
+      el.style.removeProperty(
+        "overflow"
+      );
+    }
+  }
 
   useEffect(() => {
     if (hasLoaded.current) return;
@@ -216,6 +236,14 @@ export default function WorkspacePage() {
     }
 
     loadMeeting();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      workspaceViewportRef.current?.style.removeProperty(
+        "overflow"
+      );
+    };
   }, []);
 
   function moveToTrash(id: number) {
@@ -473,7 +501,10 @@ export default function WorkspacePage() {
               />
             </div>
           ) : (
-            <div className="relative min-h-0 flex-1 overflow-x-auto overflow-y-auto bg-[#020617] overscroll-contain">
+            <div
+              ref={workspaceViewportRef}
+              className="relative min-h-0 flex-1 overflow-x-auto overflow-y-auto bg-[#020617] overscroll-contain"
+            >
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
               <div className="sticky top-0 z-20 border-b border-white/10 bg-[#020617]/90 px-4 py-2.5 text-xs leading-relaxed text-slate-400 backdrop-blur-md">
@@ -567,6 +598,9 @@ export default function WorkspacePage() {
                     }
                     onLinkClick={handleLinkClick}
                     linkAnchorId={linkAnchorId}
+                    onDragSessionChange={
+                      setWorkspaceDragSession
+                    }
                   />
                 ))}
               </div>
